@@ -1,5 +1,7 @@
 # Docker Canto
 
+[![Docker](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml/badge.svg)](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml)
+
 Canto images for all versions.
 
 ## Usage

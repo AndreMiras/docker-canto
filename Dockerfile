@@ -6,6 +6,7 @@ ARG VERSION
 
 # Set up dependencies
 RUN apk add --update --no-cache \
+    binutils-gold \
     eudev-dev \
     gcc \
     git \
