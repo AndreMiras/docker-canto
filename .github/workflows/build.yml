@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      TARGET_BRANCH: refs/heads/main
+      IMAGE_NAME: ${{ vars.DOCKERHUB_USERNAME }}/canto
+      SHOULD_PUBLISH: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
       LATEST_VERSION: 8.1.3
     strategy:
       matrix:
@@ -30,11 +31,13 @@ jobs:
           8.1.1,
           8.1.3,
         ]
+      # prevents from reaching Docker Hub pull rate limit
+      max-parallel: 5
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
-        if: ${{ github.event_name == 'push' && (github.ref == env.TARGET_BRANCH || startsWith(github.ref, 'refs/tags/')) }}
+        if: ${{ env.SHOULD_PUBLISH == 'true' }}
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -50,7 +53,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ${{ vars.DOCKERHUB_USERNAME }}/canto
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=${{ matrix.version }}
             type=raw,value=latest,enable=${{ matrix.version == env.LATEST_VERSION }}
@@ -58,10 +61,12 @@ jobs:
         env:
           VERSION: ${{ matrix.version }}
         with:
-          push: ${{ github.event_name == 'push' && (github.ref == env.TARGET_BRANCH || startsWith(github.ref, 'refs/tags/')) }}
+          push: ${{ env.SHOULD_PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION=${{ env.VERSION }}
             GO_VERSION=${{ env.GO_VERSION }}
           platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:${{ matrix.version }}
+          cache-to: ${{ env.SHOULD_PUBLISH == 'true' && format('type=registry,ref={0}:{1},mode=max', env.IMAGE_NAME, matrix.version) || '' }}
