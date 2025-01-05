@@ -18,6 +18,7 @@ jobs:
     strategy:
       matrix:
         version: [
+          thomas/archive-patch,
           1.0.0,
           2.0.0,
           3.0.0,
@@ -43,35 +44,46 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Set Go version
+      - name: Set Environment Variables
         run: |
           VERSION=${{ matrix.version }}
+          TAG_VERSION=$VERSION
+          VERSION_PREFIX=v
+          # Set Go version
           MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
           if [ "$MAJOR_VERSION" -ge "8" ]; then
             echo "GO_VERSION=1.21" >> $GITHUB_ENV
           else
             echo "GO_VERSION=1.20" >> $GITHUB_ENV
           fi
+          # custom tag as 2.0.2, since upstream didn't tag it, refs:
+          # https://github.com/Canto-Network/Canto/issues/97
+          if [ "$VERSION" == "thomas/archive-patch" ]; then
+            VERSION_PREFIX=
+            TAG_VERSION=2.0.2
+          fi
+          echo "VERSION_PREFIX=$VERSION_PREFIX" >> $GITHUB_ENV
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "PREFIXED_VERSION=$VERSION_PREFIX$VERSION" >> $GITHUB_ENV
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ matrix.version }}
-            type=raw,value=latest,enable=${{ matrix.version == env.LATEST_VERSION }}
+            type=raw,value=${{ env.TAG_VERSION }}
+            type=raw,value=latest,enable=${{ env.TAG_VERSION == env.LATEST_VERSION }}
       - uses: docker/build-push-action@v6
-        env:
-          VERSION: ${{ matrix.version }}
         with:
           push: ${{ env.SHOULD_PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ env.VERSION }}
+            VERSION=${{ env.PREFIXED_VERSION }}
             GO_VERSION=${{ env.GO_VERSION }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:${{ matrix.version }}
-          cache-to: ${{ env.SHOULD_PUBLISH == 'true' && format('type=registry,ref={0}:{1},mode=max', env.IMAGE_NAME, matrix.version) || '' }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:${{ env.TAG_VERSION }}
+          cache-to: ${{ env.SHOULD_PUBLISH == 'true' && format('type=registry,ref={0}:{1},mode=max', env.IMAGE_NAME, env.TAG_VERSION) || '' }}
   update-readme:
     runs-on: ubuntu-24.04
     needs: build

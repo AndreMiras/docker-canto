@@ -17,7 +17,7 @@ RUN apk add --update --no-cache \
 # Set working directory for the build
 WORKDIR /app
 
-RUN git clone --depth 1 --branch v$VERSION https://github.com/Canto-Network/Canto.git Canto-$VERSION && \
+RUN git clone --depth 1 --branch $VERSION https://github.com/Canto-Network/Canto.git Canto-$VERSION && \
     cd Canto-$VERSION && \
     make && \
     cd /app
