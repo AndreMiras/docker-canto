@@ -4,6 +4,14 @@
 
 Canto images for all versions.
 
+The image is published to both Docker Hub and GitHub Container Registry and can
+be pulled from both:
+
+```bash
+docker pull andremiras/canto:latest
+docker pull ghcr.io/andremiras/canto:latest
+```
+
 ## Usage
 
 Pull and use the image directly:
