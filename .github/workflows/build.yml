@@ -98,6 +98,35 @@ jobs:
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha,scope=${{ matrix.version }}
           cache-to: type=gha,scope=${{ matrix.version }},mode=max
+  # Re-push the latest version after the matrix so it appears at the top
+  # of the GHCR versions page, which is sorted by publish date not semver.
+  promote-latest:
+    runs-on: ubuntu-24.04
+    needs: build
+    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+    permissions:
+      packages: write
+    env:
+      LATEST_VERSION: 8.1.3
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Re-tag latest to update GHCR display order
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ env.GHCR_IMAGE }}:latest \
+            --tag ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }} \
+            --tag ${{ env.DOCKERHUB_IMAGE }}:latest \
+            --tag ${{ env.DOCKERHUB_IMAGE }}:${{ env.LATEST_VERSION }} \
+            ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}
   update-readme:
     runs-on: ubuntu-24.04
     needs: build

@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml/badge.svg)](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml)
 [![Docker Hub](https://img.shields.io/docker/pulls/andremiras/canto)](https://hub.docker.com/r/andremiras/canto)
+[![GHCR](https://img.shields.io/badge/GHCR-andremiras%2Fcanto-blue?logo=github)](https://github.com/AndreMiras/docker-canto/pkgs/container/canto)
 
 Canto images for all versions.
 
