@@ -61,7 +61,7 @@ jobs:
         run: |
           VERSION=${{ matrix.version }}
           TAG_VERSION=$VERSION
-          VERSION_PREFIX=v
+          BRANCH=
           # Set Go version
           MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
           if [ "$MAJOR_VERSION" -ge "8" ]; then
@@ -72,13 +72,11 @@ jobs:
           # custom tag as 2.0.2, since upstream didn't tag it, refs:
           # https://github.com/Canto-Network/Canto/issues/97
           if [ "$VERSION" == "thomas/archive-patch" ]; then
-            VERSION_PREFIX=
+            BRANCH=$VERSION
             TAG_VERSION=2.0.2
           fi
-          echo "VERSION_PREFIX=$VERSION_PREFIX" >> $GITHUB_ENV
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "PREFIXED_VERSION=$VERSION_PREFIX$VERSION" >> $GITHUB_ENV
       - uses: docker/metadata-action@v5
         id: meta
         with:
@@ -94,8 +92,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ env.PREFIXED_VERSION }}
+            VERSION=${{ env.TAG_VERSION }}
             GO_VERSION=${{ env.GO_VERSION }}
+            BRANCH=${{ env.BRANCH }}
           platforms: linux/amd64,linux/arm64
           cache-from: |
             type=registry,ref=${{ env.DOCKERHUB_IMAGE }}:${{ env.TAG_VERSION }}
