@@ -22,6 +22,50 @@ services:
     env_file:
       - .env
 
+  traefik:
+    image: traefik:v3.3
+    profiles:
+      - proxy
+    restart: unless-stopped
+    command:
+      # Entrypoints
+      - --entrypoints.cosmos-rest.address=:1317
+      - --entrypoints.evm-rpc.address=:8545
+      - --entrypoints.evm-ws.address=:8546
+      - --entrypoints.cosmos-grpc.address=:9090
+      - --entrypoints.cosmos-grpc-web.address=:9091
+      - --entrypoints.tendermint-rpc.address=:26657
+      - --entrypoints.metrics.address=:8899
+      # Providers
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --providers.file.watch=true
+      # Prometheus metrics
+      - --metrics.prometheus=true
+      - --metrics.prometheus.entrypoint=metrics
+      - --metrics.prometheus.addentrypointslabels=true
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addserviceslabels=true
+      # Logging
+      - --accesslog=${TRAEFIK_ACCESS_LOG:-false}
+      - --log.level=${TRAEFIK_LOG_LEVEL:-ERROR}
+    ports:
+      # Cosmos REST API (proxied)
+      - "${TRAEFIK_COSMOS_REST_PORT:-11317}:1317"
+      # Ethereum JSON-RPC (proxied)
+      - "${TRAEFIK_EVM_RPC_PORT:-18545}:8545"
+      # Ethereum WebSocket (proxied)
+      - "${TRAEFIK_EVM_WS_PORT:-18546}:8546"
+      # Cosmos gRPC (proxied)
+      - "${TRAEFIK_COSMOS_GRPC_PORT:-19091}:9090"
+      # Cosmos gRPC-web (proxied)
+      - "${TRAEFIK_COSMOS_GRPC_WEB_PORT:-19092}:9091"
+      # Tendermint RPC (proxied)
+      - "${TRAEFIK_TENDERMINT_RPC_PORT:-36657}:26657"
+      # Traefik Prometheus metrics
+      - "${TRAEFIK_METRICS_PORT:-8899}:8899"
+    volumes:
+      - ./config/etc/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+
   prometheus:
     image: prom/prometheus:v2.48.0
     profiles:

@@ -1,0 +1,78 @@
+http:
+  middlewares:
+    rate-limit:
+      rateLimit:
+        average: 60
+        period: 1m
+        burst: 20
+        sourceCriterion:
+          ipStrategy:
+            depth: 0
+
+  routers:
+    cosmos-rest:
+      entryPoints: ["cosmos-rest"]
+      rule: "PathPrefix(`/`)"
+      service: cosmos-rest
+      middlewares: ["rate-limit"]
+
+    evm-rpc:
+      entryPoints: ["evm-rpc"]
+      rule: "PathPrefix(`/`)"
+      service: evm-rpc
+      middlewares: ["rate-limit"]
+
+    evm-ws:
+      entryPoints: ["evm-ws"]
+      rule: "PathPrefix(`/`)"
+      service: evm-ws
+      middlewares: ["rate-limit"]
+
+    cosmos-grpc:
+      entryPoints: ["cosmos-grpc"]
+      rule: "PathPrefix(`/`)"
+      service: cosmos-grpc
+      middlewares: ["rate-limit"]
+
+    cosmos-grpc-web:
+      entryPoints: ["cosmos-grpc-web"]
+      rule: "PathPrefix(`/`)"
+      service: cosmos-grpc-web
+      middlewares: ["rate-limit"]
+
+    tendermint-rpc:
+      entryPoints: ["tendermint-rpc"]
+      rule: "PathPrefix(`/`)"
+      service: tendermint-rpc
+      middlewares: ["rate-limit"]
+
+  services:
+    cosmos-rest:
+      loadBalancer:
+        servers:
+          - url: "http://canto:1317"
+
+    evm-rpc:
+      loadBalancer:
+        servers:
+          - url: "http://canto:8545"
+
+    evm-ws:
+      loadBalancer:
+        servers:
+          - url: "http://canto:8546"
+
+    cosmos-grpc:
+      loadBalancer:
+        servers:
+          - url: "h2c://canto:9090"
+
+    cosmos-grpc-web:
+      loadBalancer:
+        servers:
+          - url: "http://canto:9091"
+
+    tendermint-rpc:
+      loadBalancer:
+        servers:
+          - url: "http://canto:26657"
