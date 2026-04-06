@@ -87,3 +87,7 @@ Optionally start with Prometheus and Grafana monitoring:
 ```sh
 docker compose --profile monitoring up
 ```
+
+This starts Prometheus (port 19090) scraping Tendermint metrics from the node,
+and Grafana (port 3000) with a pre-configured Tendermint dashboard.
+The monitoring configuration lives under `config/etc/`.
