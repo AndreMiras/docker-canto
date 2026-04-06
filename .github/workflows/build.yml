@@ -96,10 +96,8 @@ jobs:
             GO_VERSION=${{ env.GO_VERSION }}
             BRANCH=${{ env.BRANCH }}
           platforms: linux/amd64,linux/arm64
-          cache-from: |
-            type=registry,ref=${{ env.DOCKERHUB_IMAGE }}:${{ env.TAG_VERSION }}
-            type=registry,ref=${{ env.GHCR_IMAGE }}:${{ env.TAG_VERSION }}
-          cache-to: ${{ env.SHOULD_PUBLISH == 'true' && format('type=registry,ref={0}:{1},mode=max', env.DOCKERHUB_IMAGE, env.TAG_VERSION) || '' }}
+          cache-from: type=gha,scope=${{ matrix.version }}
+          cache-to: type=gha,scope=${{ matrix.version }},mode=max
   update-readme:
     runs-on: ubuntu-24.04
     needs: build
