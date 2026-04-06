@@ -1,6 +1,7 @@
 # Docker Canto
 
-[![Docker](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml/badge.svg)](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml)
+[![Build](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml/badge.svg)](https://github.com/AndreMiras/docker-canto/actions/workflows/build.yml)
+[![Docker Hub](https://img.shields.io/docker/pulls/andremiras/canto)](https://hub.docker.com/r/andremiras/canto)
 
 Canto images for all versions.
 
@@ -82,12 +83,65 @@ Start the Canto node:
 docker compose up
 ```
 
+#### Ports and services
+
+The default `docker compose up` exposes the following ports from the Canto node:
+
+| Port  | Service            | Protocol |
+| ----- | ------------------ | -------- |
+| 1317  | Cosmos REST API    | HTTP     |
+| 8545  | Ethereum JSON-RPC  | HTTP     |
+| 8546  | Ethereum WebSocket | WS       |
+| 9090  | Cosmos gRPC        | gRPC     |
+| 9091  | Cosmos gRPC-web    | HTTP     |
+| 26656 | Tendermint P2P     | TCP      |
+| 26657 | Tendermint RPC     | HTTP     |
+
+#### Traefik reverse proxy
+
+Start with the `proxy` profile to front all RPC services behind a Traefik
+reverse proxy with per-IP rate limiting (60 req/min, burst of 20):
+
+```sh
+docker compose --profile proxy up
+```
+
+Traefik listens on different host ports to avoid conflicts with the direct
+Canto ports:
+
+| Host port | Upstream    | Service                      |
+| --------- | ----------- | ---------------------------- |
+| 11317     | canto:1317  | Cosmos REST API              |
+| 18545     | canto:8545  | Ethereum JSON-RPC            |
+| 18546     | canto:8546  | Ethereum WebSocket           |
+| 19091     | canto:9090  | Cosmos gRPC                  |
+| 19092     | canto:9091  | Cosmos gRPC-web              |
+| 36657     | canto:26657 | Tendermint RPC               |
+| 8899      | —           | Traefik metrics (Prometheus) |
+
+All Traefik host ports are configurable via environment variables
+(e.g. `TRAEFIK_EVM_RPC_PORT`, `TRAEFIK_COSMOS_REST_PORT`).
+The dynamic routing configuration lives in `config/etc/traefik/dynamic.yml`.
+
+#### Monitoring
+
 Optionally start with Prometheus and Grafana monitoring:
 
 ```sh
 docker compose --profile monitoring up
 ```
 
-This starts Prometheus (port 19090) scraping Tendermint metrics from the node,
-and Grafana (port 3000) with a pre-configured Tendermint dashboard.
+| Port  | Service    |
+| ----- | ---------- |
+| 19090 | Prometheus |
+| 3000  | Grafana    |
+
+This starts Prometheus scraping Tendermint metrics from the node,
+and Grafana with a pre-configured Tendermint dashboard.
 The monitoring configuration lives under `config/etc/`.
+
+Profiles can be combined:
+
+```sh
+docker compose --profile proxy --profile monitoring up
+```
