@@ -32,6 +32,26 @@ Persisting chain data using volumes:
 docker run --volume $(pwd)/data:/root/.cantod/data andremiras/canto
 ```
 
+### Docker Compose
+
+Copy the example environment file and adjust as needed:
+
+```sh
+cp .env.example .env
+```
+
+Start the Canto node:
+
+```sh
+docker compose up
+```
+
+Optionally start with Prometheus and Grafana monitoring:
+
+```sh
+docker compose --profile monitoring up
+```
+
 Or build from it:
 
 ```dockerfile

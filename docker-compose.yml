@@ -1,0 +1,49 @@
+services:
+  canto:
+    image: andremiras/canto:${VERSION:-8.1.3}
+    restart: unless-stopped
+    ports:
+      # Cosmos REST API
+      - "1317:1317"
+      # Ethereum JSON-RPC
+      - "8545:8545"
+      # Ethereum WebSocket
+      - "8546:8546"
+      # Cosmos gRPC
+      - "9090:9090"
+      # Cosmos gRPC-web
+      - "9091:9091"
+      # Tendermint P2P
+      - "26656:26656"
+      # Tendermint RPC
+      - "26657:26657"
+    volumes:
+      - ./data:/root/.cantod/data
+    env_file:
+      - .env
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    ports:
+      - "19090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - .env
+
+volumes:
+  prometheus_data:
+  grafana_data:
