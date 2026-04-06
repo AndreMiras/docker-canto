@@ -20,40 +20,51 @@ WORKDIR /app
 
 # When BRANCH is set (e.g. thomas/archive-patch), clone by branch without
 # shallow depth. Otherwise clone the version tag with --depth 1.
-# Also download envsubst for runtime config templating.
 RUN if [ -n "$BRANCH" ]; then \
         git clone --branch "$BRANCH" https://github.com/Canto-Network/Canto.git Canto-$VERSION; \
     else \
         git clone --depth 1 --branch v$VERSION https://github.com/Canto-Network/Canto.git Canto-$VERSION; \
     fi && \
     cd Canto-$VERSION && \
-    make && \
-    cd /app && \
-    wget -q https://github.com/a8m/envsubst/releases/download/v1.4.2/envsubst-$(uname -s)-$(if [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else uname -m; fi) -O /tmp/envsubst
+    make
 
-FROM alpine:3
+# Download envsubst for runtime config templating (used by managed target)
+FROM alpine:3 AS tools
+
+RUN wget -q https://github.com/a8m/envsubst/releases/download/v1.4.2/envsubst-$(uname -s)-$(if [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else uname -m; fi) -O /tmp/envsubst
+
+# --- Stock image: just the cantod binary on Alpine ---
+FROM alpine:3 AS stock
 
 ARG VERSION
 ENV VERSION=$VERSION
 
-RUN apk add --update --no-cache jq
-
 COPY --from=buildenv /app/Canto-${VERSION}/build/cantod /tmp/cantod
-COPY --from=buildenv /tmp/envsubst /tmp/
 
 RUN install -m 0755 -o root -g root -t /usr/local/bin /tmp/cantod && \
-    rm /tmp/cantod && \
-    install -m 0755 -o root -g root -t /usr/local/bin /tmp/envsubst && \
-    rm /tmp/envsubst
+    rm /tmp/cantod
 
 ENV CANTOD_HOME=/root/.cantod
+WORKDIR /root
+
+STOPSIGNAL SIGINT
+
+ENTRYPOINT ["cantod"]
+CMD ["start", "--home", "/root/.cantod"]
+
+# --- Managed image: config templating, auto-init, env-var driven ---
+FROM stock AS managed
+
+RUN apk add --update --no-cache jq
+
+COPY --from=tools /tmp/envsubst /tmp/envsubst
+
+RUN install -m 0755 -o root -g root -t /usr/local/bin /tmp/envsubst && \
+    rm /tmp/envsubst
 
 COPY config/docker-entrypoint.sh /
 COPY config/docker-entrypoint.d/ /docker-entrypoint.d/
 COPY config/root/ /root/
-WORKDIR /root
-
-STOPSIGNAL SIGINT
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["cantod", "start", "--home", "/root/.cantod", "--x-crisis-skip-assert-invariants"]

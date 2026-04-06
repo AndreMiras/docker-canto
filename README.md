@@ -4,19 +4,31 @@
 [![Docker Hub](https://img.shields.io/docker/pulls/andremiras/canto)](https://hub.docker.com/r/andremiras/canto)
 [![GHCR](https://img.shields.io/badge/GHCR-andremiras%2Fcanto-blue?logo=github)](https://github.com/AndreMiras/docker-canto/pkgs/container/canto)
 
-Canto images for all versions.
+Canto images for all versions, available in two flavours:
 
-The image is published to both Docker Hub and GitHub Container Registry and can
-be pulled from both:
+| Flavour     | Tag example       | Description                                               |
+| ----------- | ----------------- | --------------------------------------------------------- |
+| **stock**   | `8.1.3`, `latest` | Minimal Alpine image with just the `cantod` binary        |
+| **managed** | `8.1.3-managed`   | Adds env-var config templating, auto-init, and entrypoint |
+
+Images are published to both Docker Hub and GitHub Container Registry:
 
 ```bash
+# Stock
 docker pull andremiras/canto:latest
 docker pull ghcr.io/andremiras/canto:latest
+
+# Managed
+docker pull andremiras/canto:managed
+docker pull ghcr.io/andremiras/canto:managed
 ```
 
 ## Usage
 
-Pull and use the image directly:
+### Stock image
+
+The stock image contains only the `cantod` binary. Use it when you manage
+configuration yourself or want a minimal base to build on:
 
 ```sh
 docker run andremiras/canto
@@ -28,23 +40,40 @@ Or a specific version:
 docker run andremiras/canto:8.1.3
 ```
 
+Build your own image from it:
+
+```dockerfile
+FROM andremiras/canto:8.1.3
+RUN apk add vim
+COPY my-config/ /root/.cantod/config/
+```
+
+### Managed image
+
+The managed image includes an entrypoint that auto-initialises the chain,
+downloads the genesis file, and renders config templates from environment
+variables:
+
+```sh
+docker run --env-file .env andremiras/canto:managed
+```
+
 Persisting chain data using volumes:
 
 ```sh
-docker run --env-file .env --volume $(pwd)/data:/root/.cantod/data andremiras/canto
+docker run --env-file .env --volume $(pwd)/data:/root/.cantod/data andremiras/canto:managed
 ```
 
-Or build from it:
+Extend it with custom init scripts:
 
 ```dockerfile
-FROM andremiras/canto
+FROM andremiras/canto:managed
 # any executable within /docker-entrypoint.d/ will get loaded
 COPY ./20-extra-init.sh /docker-entrypoint.d/
 RUN chmod u+x /docker-entrypoint.d/20-extra-init.sh
-RUN apk add vim
 ```
 
-## Runtime configuration
+## Runtime configuration (managed image)
 
 Most settings from the `~/.cantod/config/*.toml` files can be updated at
 runtime using environment variables.

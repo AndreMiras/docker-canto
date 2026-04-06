@@ -88,6 +88,7 @@ jobs:
             type=raw,value=latest,enable=${{ env.TAG_VERSION == env.LATEST_VERSION }}
       - uses: docker/build-push-action@v6
         with:
+          target: stock
           push: ${{ env.SHOULD_PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -98,6 +99,29 @@ jobs:
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha,scope=${{ matrix.version }}
           cache-to: type=gha,scope=${{ matrix.version }},mode=max
+      # Build managed image (config templating, auto-init) from stock target
+      - uses: docker/metadata-action@v5
+        id: meta-managed
+        with:
+          images: |
+            ${{ env.DOCKERHUB_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
+          tags: |
+            type=raw,value=${{ env.TAG_VERSION }}-managed
+            type=raw,value=managed,enable=${{ env.TAG_VERSION == env.LATEST_VERSION }}
+      - uses: docker/build-push-action@v6
+        with:
+          target: managed
+          push: ${{ env.SHOULD_PUBLISH == 'true' }}
+          tags: ${{ steps.meta-managed.outputs.tags }}
+          labels: ${{ steps.meta-managed.outputs.labels }}
+          build-args: |
+            VERSION=${{ env.TAG_VERSION }}
+            GO_VERSION=${{ env.GO_VERSION }}
+            BRANCH=${{ env.BRANCH }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha,scope=${{ matrix.version }}-managed
+          cache-to: type=gha,scope=${{ matrix.version }}-managed,mode=max
   # Re-push the latest version after the matrix so it appears at the top
   # of the GHCR versions page, which is sorted by publish date not semver.
   promote-latest:
@@ -127,6 +151,12 @@ jobs:
             --tag ${{ env.DOCKERHUB_IMAGE }}:latest \
             --tag ${{ env.DOCKERHUB_IMAGE }}:${{ env.LATEST_VERSION }} \
             ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}
+          docker buildx imagetools create \
+            --tag ${{ env.GHCR_IMAGE }}:managed \
+            --tag ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}-managed \
+            --tag ${{ env.DOCKERHUB_IMAGE }}:managed \
+            --tag ${{ env.DOCKERHUB_IMAGE }}:${{ env.LATEST_VERSION }}-managed \
+            ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}-managed
   update-readme:
     runs-on: ubuntu-24.04
     needs: build

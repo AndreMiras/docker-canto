@@ -21,7 +21,7 @@ docker/pull:
 
 docker/build/version/%:
 	$(eval GO_VERSION := $(shell $(call get_go_version,$*)))
-	docker build --tag=$(DOCKER_IMAGE):$* --build-arg VERSION=$* --build-arg GO_VERSION=$(GO_VERSION) $(if $(BRANCH),--build-arg BRANCH=$(BRANCH)) .
+	docker build --target stock --tag=$(DOCKER_IMAGE):$* --build-arg VERSION=$* --build-arg GO_VERSION=$(GO_VERSION) $(if $(BRANCH),--build-arg BRANCH=$(BRANCH)) .
 
 docker/build/versions:
 	for version in $(VERSIONS) ; do \
@@ -30,10 +30,32 @@ docker/build/versions:
 
 docker/build: docker/build/versions
 
+docker/build/managed/version/%:
+	$(eval GO_VERSION := $(shell $(call get_go_version,$*)))
+	docker build --target managed --tag=$(DOCKER_IMAGE):$*-managed --build-arg VERSION=$* --build-arg GO_VERSION=$(GO_VERSION) $(if $(BRANCH),--build-arg BRANCH=$(BRANCH)) .
+
+docker/build/managed/versions:
+	for version in $(VERSIONS) ; do \
+	    make docker/build/managed/version/$$version ; \
+	done
+
+docker/build/managed: docker/build/managed/versions
+
 docker/buildx/version/%:
 	docker buildx build \
+		--target stock \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(DOCKER_IMAGE):$* \
+		--build-arg VERSION=$* \
+		--build-arg GO_VERSION=$(shell $(call get_go_version,$*)) \
+		$(if $(BRANCH),--build-arg BRANCH=$(BRANCH)) \
+		--push .
+
+docker/buildx/managed/version/%:
+	docker buildx build \
+		--target managed \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(DOCKER_IMAGE):$*-managed \
 		--build-arg VERSION=$* \
 		--build-arg GO_VERSION=$(shell $(call get_go_version,$*)) \
 		$(if $(BRANCH),--build-arg BRANCH=$(BRANCH)) \
@@ -44,7 +66,13 @@ docker/buildx/versions:
 	    make docker/buildx/version/$$version ; \
 	done
 
+docker/buildx/managed/versions:
+	for version in $(VERSIONS) ; do \
+	    make docker/buildx/managed/version/$$version ; \
+	done
+
 docker/buildx: docker/buildx/versions
+docker/buildx/managed: docker/buildx/managed/versions
 
 docker/login:
 	docker login --username $(REGISTRY_USERNAME)
@@ -52,18 +80,33 @@ docker/login:
 docker/push/version/%:
 	docker push $(DOCKER_IMAGE):$*
 
+docker/push/managed/version/%:
+	docker push $(DOCKER_IMAGE):$*-managed
+
 docker/push/versions:
 	for version in $(VERSIONS) ; do \
 	    make docker/push/version/$$version ; \
 	done
 
+docker/push/managed/versions:
+	for version in $(VERSIONS) ; do \
+	    make docker/push/managed/version/$$version ; \
+	done
+
 docker/push: docker/push/versions
+docker/push/managed: docker/push/managed/versions
 
 docker/run:
 	docker run -it --rm $(DOCKER_IMAGE):$(IMAGE_TAG)
 
 docker/run/sh:
 	docker run -it --entrypoint /bin/sh --rm $(DOCKER_IMAGE):$(IMAGE_TAG)
+
+docker/run/managed:
+	docker run -it --rm $(DOCKER_IMAGE):$(IMAGE_TAG)-managed
+
+docker/run/managed/sh:
+	docker run -it --entrypoint /bin/sh --rm $(DOCKER_IMAGE):$(IMAGE_TAG)-managed
 
 lint/node:
 	npx prettier --check .github *.md
