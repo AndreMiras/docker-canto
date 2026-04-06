@@ -46,9 +46,14 @@ RUN install -m 0755 -o root -g root -t /usr/local/bin /tmp/cantod && \
     install -m 0755 -o root -g root -t /usr/local/bin /tmp/envsubst && \
     rm /tmp/envsubst
 
+ENV CANTOD_HOME=/root/.cantod
+
+COPY config/docker-entrypoint.sh /
+COPY config/docker-entrypoint.d/ /docker-entrypoint.d/
+COPY config/root/ /root/
 WORKDIR /root
 
 STOPSIGNAL SIGINT
 
-ENTRYPOINT ["cantod"]
-CMD ["start"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["cantod", "start", "--home", "/root/.cantod", "--x-crisis-skip-assert-invariants"]
