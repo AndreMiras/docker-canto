@@ -63,6 +63,8 @@ services:
       - "${TRAEFIK_TENDERMINT_RPC_PORT:-36657}:26657"
       # Traefik Prometheus metrics
       - "${TRAEFIK_METRICS_PORT:-8899}:8899"
+    env_file:
+      - .env
     volumes:
       - ./config/etc/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
 

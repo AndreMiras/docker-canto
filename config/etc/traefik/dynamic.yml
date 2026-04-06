@@ -2,9 +2,9 @@ http:
   middlewares:
     rate-limit:
       rateLimit:
-        average: 60
-        period: 1m
-        burst: 20
+        average: {{ env "RATE_LIMIT_AVERAGE" | default "60" }}
+        period: {{ env "RATE_LIMIT_PERIOD" | default "1m" }}
+        burst: {{ env "RATE_LIMIT_BURST" | default "20" }}
         sourceCriterion:
           ipStrategy:
             depth: 0
