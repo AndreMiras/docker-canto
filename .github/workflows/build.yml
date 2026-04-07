@@ -151,18 +151,19 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Re-tag latest to update GHCR display order
         run: |
+          GHCR_IMAGE=$(echo "$GHCR_IMAGE" | tr '[:upper:]' '[:lower:]')
           docker buildx imagetools create \
-            --tag ${{ env.GHCR_IMAGE }}:latest \
-            --tag ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }} \
-            --tag ${{ env.DOCKERHUB_IMAGE }}:latest \
-            --tag ${{ env.DOCKERHUB_IMAGE }}:${{ env.LATEST_VERSION }} \
-            ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}
+            --tag "$GHCR_IMAGE:latest" \
+            --tag "$GHCR_IMAGE:$LATEST_VERSION" \
+            --tag "$DOCKERHUB_IMAGE:latest" \
+            --tag "$DOCKERHUB_IMAGE:$LATEST_VERSION" \
+            "$GHCR_IMAGE:$LATEST_VERSION"
           docker buildx imagetools create \
-            --tag ${{ env.GHCR_IMAGE }}:managed \
-            --tag ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}-managed \
-            --tag ${{ env.DOCKERHUB_IMAGE }}:managed \
-            --tag ${{ env.DOCKERHUB_IMAGE }}:${{ env.LATEST_VERSION }}-managed \
-            ${{ env.GHCR_IMAGE }}:${{ env.LATEST_VERSION }}-managed
+            --tag "$GHCR_IMAGE:managed" \
+            --tag "$GHCR_IMAGE:$LATEST_VERSION-managed" \
+            --tag "$DOCKERHUB_IMAGE:managed" \
+            --tag "$DOCKERHUB_IMAGE:$LATEST_VERSION-managed" \
+            "$GHCR_IMAGE:$LATEST_VERSION-managed"
   update-readme:
     runs-on: ubuntu-24.04
     needs: build
