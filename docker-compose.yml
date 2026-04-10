@@ -23,7 +23,7 @@ services:
       - .env
 
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.6
     profiles:
       - proxy
     restart: unless-stopped
@@ -69,7 +69,7 @@ services:
       - ./config/etc/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
 
   prometheus:
-    image: prom/prometheus:v2.48.0
+    image: prom/prometheus:v3.11.1
     profiles:
       - monitoring
     restart: unless-stopped
@@ -80,7 +80,7 @@ services:
       - ./config/etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana:10.2.2
+    image: grafana/grafana:12.4.2
     profiles:
       - monitoring
     restart: unless-stopped
