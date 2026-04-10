@@ -68,6 +68,17 @@ services:
     volumes:
       - ./config/etc/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
 
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    pid: host
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+
   prometheus:
     image: prom/prometheus:v3.11.1
     profiles:
