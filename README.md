@@ -175,3 +175,22 @@ Profiles can be combined:
 ```sh
 docker compose --profile proxy --profile monitoring up
 ```
+
+### Systemd service
+
+Update the `WorkingDirectory` path in `docker-compose-canto.service`.
+Then copy it over before enabling and starting it.
+
+```sh
+sudo cp docker-compose-canto.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable docker-compose-canto
+sudo systemctl start docker-compose-canto
+```
+
+Check status and logs:
+
+```sh
+sudo systemctl status docker-compose-canto
+sudo journalctl -u docker-compose-canto --follow --output cat
+```
