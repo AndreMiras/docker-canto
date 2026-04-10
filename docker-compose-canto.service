@@ -5,6 +5,8 @@ After=docker.service
 
 [Service]
 WorkingDirectory=/root/docker-canto
+Environment=COMPOSE_PROFILES=proxy,monitoring
+ExecStartPre=/usr/bin/docker compose down --remove-orphans
 ExecStart=/usr/bin/docker compose up
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
