@@ -164,6 +164,12 @@ jobs:
             --tag "$DOCKERHUB_IMAGE:managed" \
             --tag "$DOCKERHUB_IMAGE:$LATEST_VERSION-managed" \
             "$GHCR_IMAGE:$LATEST_VERSION-managed"
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Prometheus config
+        run: make lint/prometheus
   update-readme:
     runs-on: ubuntu-24.04
     needs: build

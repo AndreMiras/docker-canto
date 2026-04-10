@@ -111,7 +111,11 @@ docker/run/managed/sh:
 lint/node:
 	npx prettier --check .github *.md
 
-lint: lint/node
+lint/prometheus:
+	docker compose run --rm --no-deps --entrypoint promtool prometheus \
+		check config /etc/prometheus/prometheus.yml
+
+lint: lint/node lint/prometheus
 
 format/node:
 	npx prettier --write .github *.md
